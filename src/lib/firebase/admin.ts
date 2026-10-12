@@ -22,9 +22,19 @@ function credentials() {
   return {
     projectId,
     clientEmail,
-    // Vercel and most CI systems store the key with literal \n sequences.
+    // CI systems and .env files store the key with literal \n sequences.
     privateKey: privateKey.replace(/\\n/g, "\n"),
   };
+}
+
+/**
+ * On Firebase App Hosting the server runs as the project's own service
+ * account, and FIREBASE_CONFIG is set for it, so the Admin SDK finds both the
+ * project and its credentials without a key. Everywhere else - local dev,
+ * scripts, any other host - the key comes from env vars as before.
+ */
+function onAppHosting(): boolean {
+  return !!process.env.FIREBASE_CONFIG && !process.env.FIREBASE_PRIVATE_KEY;
 }
 
 export function adminApp(): App {
@@ -32,7 +42,9 @@ export function adminApp(): App {
   const existing = getApps();
   cached = existing.length
     ? existing[0]
-    : initializeApp({ credential: cert(credentials()) });
+    : onAppHosting()
+      ? initializeApp()
+      : initializeApp({ credential: cert(credentials()) });
   return cached;
 }
 

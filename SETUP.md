@@ -4,9 +4,9 @@ Start to finish this is about fifteen minutes, most of it waiting on the
 Firebase console. Steps 1 to 6 get you a working local board. Step 7 puts it
 online.
 
-Nothing here needs the Blaze (pay-as-you-go) plan. The whole thing runs on
-the free Spark plan because there are no Cloud Functions — the server-side
-work happens in Next.js route handlers on Vercel.
+Steps 1 to 6 run on the free Spark plan. Step 7 hosts the app on Firebase
+App Hosting, which needs the Blaze (pay-as-you-go) plan; at a feedback
+board's traffic it stays inside the free tier.
 
 ---
 
@@ -158,25 +158,18 @@ and people have already voted on them. Pass `--write --pending` instead if
 you genuinely want to re-review the back catalogue. Either way the script is
 idempotent and never overwrites a decision an admin has already made.
 
-## 7. Deploy to Vercel
+## 7. Deploy to Firebase App Hosting
 
-```bash
-npx vercel
-```
+[DEPLOY.md](./DEPLOY.md#1-hosting-firebase-app-hosting) has the steps. In
+short: upgrade to Blaze, create an App Hosting backend from the GitHub repo
+in the same region as Firestore, and add its `hosted.app` domain under
+**Authentication → Settings → Authorized domains**. Anonymous sign-in fails
+silently from an unlisted domain, which looks exactly like "voting is
+broken".
 
-Then in the Vercel dashboard, **Settings → Environment Variables**, add
-every variable from your `.env.local` for Production, Preview and
-Development. Two things people get wrong here:
-
-- **`FIREBASE_PRIVATE_KEY`**: paste it exactly as it is in `.env.local`,
-  including the `\n` sequences. `src/lib/firebase/admin.ts` converts them
-  back to real newlines. Do not paste a version with real line breaks.
-- **`NEXT_PUBLIC_*` variables are baked in at build time.** Changing one
-  requires a redeploy, not just a restart.
-
-Finally, back in Firebase: **Authentication → Settings → Authorized
-domains**, add your Vercel domain. Anonymous sign-in fails silently from an
-unlisted domain, which looks exactly like "voting is broken".
+Nothing from `.env.local` is copied across. The server uses the project's
+own identity instead of the private key, and the public web config comes
+from App Hosting at build time.
 
 ---
 
@@ -265,9 +258,9 @@ ID tokens are cached for up to an hour. Sign out and back in. `/api/me`
 verifies the token with `checkRevoked` on every call, so it will tell you
 the truth as soon as the token refreshes.
 
-**`FIREBASE_PRIVATE_KEY` errors on Vercel but works locally.**
-The `\n` sequences were converted to real newlines somewhere in the paste.
-Re-paste the single-line form.
+**Writes fail on App Hosting with `PERMISSION_DENIED` but work locally.**
+The backend's service account is missing an IAM role. See step 3 of
+[DEPLOY.md](./DEPLOY.md#1-hosting-firebase-app-hosting).
 
 **Seed script says credentials are missing.**
 It reads `.env.local` from the directory you run it in. Run it from the

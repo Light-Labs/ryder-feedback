@@ -43,16 +43,42 @@ stop and deploy the rules again — something overwrote them.
   id derives from the Frill slug, so it rewrites rather than duplicates — but
   it will revert any approvals made since the last import.
 
-## 1. Environment
+## 1. Hosting: Firebase App Hosting
 
-Copy `.env.local.example` and fill it in. Values come from the Firebase
-console for project `basic-bison-508123-k7`; Banno has them.
+The app runs on Firebase App Hosting, in the same Google project as the
+data. There is no service account key to store anywhere: the server runs as
+the project's own identity (`src/lib/firebase/admin.ts`), and the public web
+config is filled in at build time from `FIREBASE_WEBAPP_CONFIG`
+(`next.config.ts`). Runtime settings live in `apphosting.yaml`.
 
-The service account key is **not** in this repo and must not be. When you add
-`FIREBASE_PRIVATE_KEY` to Vercel, paste it with the literal `\n` sequences
-intact, not real line breaks — `src/lib/firebase/admin.ts` converts them back.
-`NEXT_PUBLIC_*` values are baked in at build time, so changing one needs a
-redeploy, not a restart.
+One-time setup, on a machine with a browser:
+
+1. **Upgrade the project to Blaze** (pay-as-you-go) in the Firebase console.
+   App Hosting requires it. At this traffic it stays inside the free tier;
+   set a budget alert (Billing → Budgets, e.g. $5) so a surprise is an email,
+   not an invoice.
+2. **Create the backend.** Console → Build → App Hosting → Get started:
+   connect the GitHub repo, branch `main`, root `/`, backend id
+   `ryder-feedback`, and link it to the existing web app. **Pick the region
+   your Firestore database is in** (Firestore → Databases shows it), so
+   every write stays inside one region. From then on every push to `main`
+   deploys.
+
+   Without GitHub: `npm i -g firebase-tools`, `firebase login`, then
+   `firebase deploy --only apphosting --project basic-bison-508123-k7`
+   uploads the local source using the `apphosting` block in `firebase.json`.
+3. **Check the server's permissions.** The first time you vote on the
+   deployed site, watch App Hosting → Logs. A `PERMISSION_DENIED` there means
+   the backend's service account
+   (`firebase-app-hosting-compute@basic-bison-508123-k7.iam.gserviceaccount.com`)
+   needs **Cloud Datastore User** and **Firebase Authentication Viewer** in
+   IAM: the first for writes, the second for the revocation check on admin
+   routes.
+
+For local development `.env.local` is unchanged: copy `.env.local.example`,
+and the service account key there is still how scripts and `next dev` reach
+the project. Never add `FIREBASE_PRIVATE_KEY` to App Hosting; its presence
+switches the server back to key-based credentials.
 
 ## 2. Firebase console
 
@@ -65,7 +91,9 @@ redeploy, not a restart.
   requires `sign_in_provider == 'google.com'` for exactly this reason and
   `tests/rules.test.mjs` pins it, but the safest version is not to turn it on.
 - **Authentication → Settings → Authorized domains**: add `feedback.ryder.id`
-  and the Vercel preview domain. Sign-in fails silently from an unlisted
+  and the App Hosting domain
+  (`ryder-feedback--basic-bison-508123-k7.<region>.hosted.app`, shown on the
+  backend page). Sign-in fails silently from an unlisted
   domain, which looks exactly like "the login button does nothing".
 
 ## 3. Rules and indexes
@@ -102,11 +130,13 @@ anonymous session.
 
 ## 5. The domain
 
-`feedback.ryder.id` currently points at Frill. Once DNS moves to Vercel:
+`feedback.ryder.id` currently points at Frill. To move it:
 
-- add the domain in Vercel and let it issue the certificate;
 - add it to Firebase **Authorized domains** (step 2) *before* cutting over,
   or admin sign-in breaks the moment the domain switches;
+- App Hosting → the backend → Settings → Domains → Add custom domain, and
+  create the DNS records it lists. It issues the certificate itself once DNS
+  resolves;
 - Frill keeps serving until DNS propagates, so there is a window where both
   exist. Nothing new should be answered on Frill after the cutover starts.
 

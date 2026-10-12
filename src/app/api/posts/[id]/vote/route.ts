@@ -35,8 +35,8 @@ type Params = { params: Promise<{ id: string }> };
  * The cost is one function invocation per vote and no offline voting. The UI
  * hides the latency by updating optimistically. If you later want true
  * offline voting, the way to get it is a Cloud Function triggered on the
- * votes subcollection maintaining the counter, which needs the Blaze plan;
- * this route is the version that runs entirely on Vercel plus Firestore.
+ * votes subcollection maintaining the counter; this route is the version
+ * that needs nothing beyond the Next.js server and Firestore.
  *
  * On the round-trip budget, because this is the one hot path in the app.
  * Every Firestore transaction costs two trips — one to open and read, one to

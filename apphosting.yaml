@@ -1,0 +1,24 @@
+# Firebase App Hosting runtime settings. See DEPLOY.md.
+#
+# No service account key and no NEXT_PUBLIC_FIREBASE_* values here: App
+# Hosting runs the server as the project's own identity, and next.config.ts
+# fills the public web config from FIREBASE_WEBAPP_CONFIG at build time.
+
+runConfig:
+  # Scale to zero when idle: free at this traffic, at the price of a cold
+  # start of a second or two on the first write after a quiet spell. Set to 1
+  # (roughly $5-10/month) if that becomes noticeable.
+  minInstances: 0
+  # A ceiling on cost if something hammers the API. Rate limits already cap
+  # each user; this caps everyone together.
+  maxInstances: 4
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: NEXT_PUBLIC_SITE_NAME
+    value: Ryder
+    availability:
+      - BUILD
+      - RUNTIME

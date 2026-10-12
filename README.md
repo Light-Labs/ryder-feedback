@@ -1,8 +1,8 @@
 # Ryder Feedback
 
 A public feedback board and roadmap, in the shape of Frill. Next.js App
-Router, Firestore for data, Firebase Auth for identity, deployable to Vercel
-on Firebase's free plan.
+Router, Firestore for data, Firebase Auth for identity, hosted on Firebase
+App Hosting.
 
 **[SETUP.md](./SETUP.md) is the install guide.** This file is about how it
 works and why.
