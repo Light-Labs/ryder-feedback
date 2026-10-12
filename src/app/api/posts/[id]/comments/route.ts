@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { grantsAdmin } from "@/lib/access";
 import { adminDb, requireUser } from "@/lib/firebase/admin";
 import { isPubliclyVisible } from "@/lib/serialize";
+import { generatedName } from "@/lib/names";
 import { errorResponse, readJson } from "@/lib/http";
 import { consume } from "@/lib/rate-limit";
 import {
@@ -35,7 +36,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const body = await readJson(req);
     const text = parseComment(body.body);
-    const name = parseName(body.name ?? user.name);
+    const name = parseName(body.name ?? user.name, generatedName(user.uid));
     const parentId = body.parentId ? parseId(body.parentId, "parent") : null;
 
     if (looksLikeSpam(text))

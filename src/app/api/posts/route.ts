@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
 
 import { adminDb, requireUser } from "@/lib/firebase/admin";
+import { generatedName } from "@/lib/names";
 import { errorResponse, readJson } from "@/lib/http";
 import { consume } from "@/lib/rate-limit";
 import {
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
     const title = parseTitle(body.title);
     const text = parseBody(body.body);
     const boardId = parseId(body.boardId, "board");
-    const name = parseName(body.name ?? user.name);
+    const name = parseName(body.name ?? user.name, generatedName(user.uid));
     const email = parseEmail(body.email ?? user.email);
 
     if (looksLikeSpam(`${title}\n${text}`))

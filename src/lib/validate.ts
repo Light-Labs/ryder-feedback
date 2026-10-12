@@ -60,9 +60,10 @@ export function parseComment(input: unknown): string {
   return body;
 }
 
-export function parseName(input: unknown): string {
+/** `fallback` is the visitor's generated name; see src/lib/names.ts. */
+export function parseName(input: unknown, fallback: string): string {
   const name = clean(input, LIMITS.nameMax);
-  return name || "Anonymous";
+  return name || fallback;
 }
 
 export function parseEmail(input: unknown): string | null {

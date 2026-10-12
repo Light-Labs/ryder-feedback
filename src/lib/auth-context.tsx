@@ -11,11 +11,20 @@ import {
 import { onAuthStateChanged, type User } from "firebase/auth";
 
 import { ensureUser, getClientAuth, getIdToken } from "./firebase/client";
+import { generatedName } from "./names";
 
 export interface Identity {
   uid: string | null;
-  /** Name the visitor last submitted under, remembered locally. */
+  /**
+   * Name the visitor last submitted under, remembered locally; until they
+   * type one, their generated name.
+   */
   name: string;
+  /**
+   * "Curious Otter": what the server records when the name is left empty.
+   * Empty until the uid is known.
+   */
+  defaultName: string;
   isAdmin: boolean;
   ready: boolean;
   error: string | null;
@@ -44,16 +53,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [name, setNameState] = useState("");
+  const defaultName = user ? generatedName(user.uid) : "";
 
-  // Restore the remembered display name. Wrapped because storage throws
-  // outright in some privacy modes rather than just returning null.
+  // Restore the remembered display name, or start from the generated one so
+  // the field shows what will be posted. Only the first fill: clearing the
+  // field afterwards is allowed and stays cleared - the server falls back to
+  // the same generated name. Wrapped because storage throws outright in some
+  // privacy modes rather than just returning null.
   useEffect(() => {
+    if (!defaultName) return;
+    let stored: string | null = null;
     try {
-      setNameState(localStorage.getItem(NAME_KEY) ?? "");
+      stored = localStorage.getItem(NAME_KEY);
     } catch {
       /* no-op */
     }
-  }, []);
+    setNameState((current) => current || stored || defaultName);
+  }, [defaultName]);
 
   const setName = useCallback((next: string) => {
     setNameState(next);
@@ -159,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       uid: user?.uid ?? null,
       name,
+      defaultName,
       isAdmin,
       ready,
       error,
@@ -166,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authedFetch,
       refresh,
     }),
-    [user?.uid, name, isAdmin, ready, error, setName, authedFetch, refresh],
+    [user?.uid, name, defaultName, isAdmin, ready, error, setName, authedFetch, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

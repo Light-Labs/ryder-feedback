@@ -35,7 +35,7 @@ export function SubmitDialog({
 }) {
   const router = useRouter();
   const toast = useToast();
-  const { name, setName, authedFetch } = useIdentity();
+  const { name, defaultName, setName, authedFetch } = useIdentity();
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -282,7 +282,7 @@ export function SubmitDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={LIMITS.nameMax}
-                placeholder="Anonymous"
+                placeholder={defaultName || "Your name"}
               />
             </div>
           </div>

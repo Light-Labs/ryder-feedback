@@ -18,7 +18,7 @@ export function PostDetail({ postId }: { postId: string }) {
   const toast = useToast();
   const { post, comments, events, loading, missing } = usePost(postId);
   const votes = useVotes();
-  const { isAdmin, name, setName, authedFetch } = useIdentity();
+  const { isAdmin, name, defaultName, setName, authedFetch } = useIdentity();
 
   const [draft, setDraft] = useState("");
   /**
@@ -319,6 +319,7 @@ export function PostDetail({ postId }: { postId: string }) {
                           value={replyDraft}
                           onChange={setReplyDraft}
                           name={name}
+                          defaultName={defaultName}
                           onNameChange={setName}
                           sending={sending}
                           onCancel={() => setReplyTo(null)}
@@ -375,7 +376,7 @@ export function PostDetail({ postId }: { postId: string }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={LIMITS.nameMax}
-              placeholder="Your name"
+              placeholder={defaultName || "Your name"}
             />
             <button
               type="submit"
@@ -409,6 +410,7 @@ function ReplyBox({
   value,
   onChange,
   name,
+  defaultName,
   onNameChange,
   sending,
   onCancel,
@@ -418,6 +420,7 @@ function ReplyBox({
   value: string;
   onChange: (v: string) => void;
   name: string;
+  defaultName: string;
   onNameChange: (v: string) => void;
   sending: boolean;
   onCancel: () => void;
@@ -457,7 +460,7 @@ function ReplyBox({
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
           maxLength={LIMITS.nameMax}
-          placeholder="Your name"
+          placeholder={defaultName || "Your name"}
         />
         <button
           type="button"
