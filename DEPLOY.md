@@ -190,7 +190,5 @@ anonymous session.
 - **`npm run test:rules` and `npm run test:e2e` need JDK 21+.** The rules
   tests (39, covering the admin gate and the pending queue) pass and run in
   CI on every push. The e2e smoke test has still never been run.
-- **One unit test fails on `main`**: `tests/ranking.test.mjs` expects a very
-  old, heavily voted idea to rank below a new one under "trending", and the
-  ranking puts it above. CI runs it without blocking deploys until someone
-  decides which is right.
+- **Unit tests do not block deploys.** CI runs them and shows a failure, but
+  only the typecheck and the rules tests stop a deploy.

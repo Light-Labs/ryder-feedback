@@ -43,8 +43,11 @@ export function hotScore(post: Post, now = Date.now()): number {
   return (weight + 1) / Math.pow(ageDays + 2, GRAVITY);
 }
 
-export function sortPosts(posts: Post[], mode: SortMode): Post[] {
-  const now = Date.now();
+export function sortPosts(
+  posts: Post[],
+  mode: SortMode,
+  now = Date.now(),
+): Post[] {
   const out = [...posts];
   switch (mode) {
     case "trending":

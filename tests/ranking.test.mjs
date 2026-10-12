@@ -119,7 +119,7 @@ describe("sortPosts", () => {
     // ticket from two and a half years ago is not trending by any reading of
     // the word — "Top" is the tab that still puts it first.
     assert.deepEqual(
-      sortPosts(posts, "trending").map((p) => p.id),
+      sortPosts(posts, "trending", NOW).map((p) => p.id),
       ["old-popular", "new-small", "ancient-huge"],
     );
   });
