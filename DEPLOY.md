@@ -57,23 +57,49 @@ One-time setup, on a machine with a browser:
    App Hosting requires it. At this traffic it stays inside the free tier;
    set a budget alert (Billing → Budgets, e.g. $5) so a surprise is an email,
    not an invoice.
-2. **Create the backend.** Console → Build → App Hosting → Get started:
-   connect the GitHub repo, branch `main`, root `/`, backend id
-   `ryder-feedback`, and link it to the existing web app. **Pick the region
-   your Firestore database is in** (Firestore → Databases shows it), so
-   every write stays inside one region. From then on every push to `main`
-   deploys.
+2. **The backend** is `ryder-feedback` in `us-central1`, next to Firestore
+   (`nam5`), linked to the "Ryder Feedback" web app, and serving at
+   `https://ryder-feedback--basic-bison-508123-k7.us-central1.hosted.app`.
+   Recreating it: `firebase apphosting:backends:create --backend
+   ryder-feedback --primary-region us-central1 --app <web app id>`.
+3. **Server permissions.** The backend runs as
+   `firebase-app-hosting-compute@basic-bison-508123-k7.iam.gserviceaccount.com`,
+   whose default roles already cover Firestore writes and the revocation
+   check. If App Hosting → Logs ever shows `PERMISSION_DENIED`, it needs
+   **Cloud Datastore User** and **Firebase Authentication Viewer**.
 
-   Without GitHub: `npm i -g firebase-tools`, `firebase login`, then
-   `firebase deploy --only apphosting --project basic-bison-508123-k7`
-   uploads the local source using the `apphosting` block in `firebase.json`.
-3. **Check the server's permissions.** The first time you vote on the
-   deployed site, watch App Hosting → Logs. A `PERMISSION_DENIED` there means
-   the backend's service account
-   (`firebase-app-hosting-compute@basic-bison-508123-k7.iam.gserviceaccount.com`)
-   needs **Cloud Datastore User** and **Firebase Authentication Viewer** in
-   IAM: the first for writes, the second for the revocation check on admin
-   routes.
+### Deploying changes
+
+Pushing to `main` deploys. `.github/workflows/deploy.yml` runs the typecheck
+and the rules tests, then deploys rules, indexes and the app, then checks
+that a pending idea still returns 403. Pull requests run the checks only.
+
+There are no secrets in GitHub. The workflow signs in to Google with
+Workload Identity Federation: GitHub's OIDC token is exchanged for
+short-lived credentials of `github-deploy@basic-bison-508123-k7.iam.gserviceaccount.com`.
+The pool (`github`) and provider (`github`) accept tokens only where
+`repository == 'Light-Labs/ryder-feedback'` and `ref == 'refs/heads/main'`,
+so forks, pull requests and other branches cannot deploy, even with an
+edited workflow. If the repository is renamed or moved, update that
+condition in IAM → Workload Identity Federation, or deploys stop with an
+auth error.
+
+`github-deploy` holds only what a deploy needs: App Hosting Admin, Firebase
+Rules Admin, Cloud Datastore Index Admin, Service Usage Consumer and Firebase
+Viewer on the project; Storage Admin on the
+`firebaseapphosting-sources-648320838171-us-central1` bucket alone; and
+Service Account User on the App Hosting runtime account, so rollouts can run
+as it.
+
+By hand, from a machine with `firebase login`:
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,apphosting --project basic-bison-508123-k7
+```
+
+The standalone `firebase` binary runs `emulators:exec` scripts with its own
+embedded Node and cannot find the test files; use
+`npx firebase-tools@15.33.0 emulators:exec ...` for the rules tests.
 
 For local development `.env.local` is unchanged: copy `.env.local.example`,
 and the service account key there is still how scripts and `next dev` reach
@@ -161,7 +187,10 @@ anonymous session.
   to be filed wrong.
 - **One submission was truncated** to the 4,000-character body limit, and one
   title to 120 characters. Both are marked with a trailing `…`.
-- **`npm run test:rules` and `npm run test:e2e` need JDK 21+.** They were
-  written but never executed on Banno's machine, which has Java 8. Worth
-  running once somewhere with a modern JDK before cutover — they cover the
-  admin gate and the pending-queue rules directly.
+- **`npm run test:rules` and `npm run test:e2e` need JDK 21+.** The rules
+  tests (39, covering the admin gate and the pending queue) pass and run in
+  CI on every push. The e2e smoke test has still never been run.
+- **One unit test fails on `main`**: `tests/ranking.test.mjs` expects a very
+  old, heavily voted idea to rank below a new one under "trending", and the
+  ranking puts it above. CI runs it without blocking deploys until someone
+  decides which is right.
