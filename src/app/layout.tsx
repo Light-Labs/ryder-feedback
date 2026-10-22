@@ -39,7 +39,7 @@ const anekLatin = Anek_Latin({
  */
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://ryder-feedback--basic-bison-508123-k7.us-central1.hosted.app";
+  "https://feedback.ryder.id";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
