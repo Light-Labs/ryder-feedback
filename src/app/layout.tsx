@@ -33,17 +33,36 @@ const anekLatin = Anek_Latin({
   variable: "--font-anek",
 });
 
+/**
+ * Where the site is served. Social crawlers need the og:image URL to be
+ * absolute, and without this Next.js would build it against localhost.
+ */
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://ryder-feedback--basic-bison-508123-k7.us-central1.hosted.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
   title: {
     default: `${SITE_NAME} — feature requests and roadmap`,
     template: `%s — ${SITE_NAME}`,
   },
   description:
     "Tell us what to build next. Vote on ideas from other Ryder users and follow what we are working on.",
+  // The image itself comes from app/opengraph-image.tsx, which Next.js wires
+  // into both og:image and, through the large card below, the X/Twitter card.
   openGraph: {
-    title: SITE_NAME,
+    title: `${SITE_NAME} — feature requests and roadmap`,
     description: "Vote on what Ryder builds next, and follow the public roadmap.",
+    siteName: SITE_NAME,
     type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — feature requests and roadmap`,
+    description: "Vote on what Ryder builds next, and follow the public roadmap.",
   },
   robots: { index: true, follow: true },
 };
