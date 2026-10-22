@@ -5,9 +5,8 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/Toast";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
-
-const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME ?? "Ryder Feedback";
 
 /**
  * The two faces ryder.id ships. Loaded through next/font so they are
@@ -32,14 +31,6 @@ const anekLatin = Anek_Latin({
   axes: ["wdth"],
   variable: "--font-anek",
 });
-
-/**
- * Where the site is served. Social crawlers need the og:image URL to be
- * absolute, and without this Next.js would build it against localhost.
- */
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://feedback.ryder.id";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
