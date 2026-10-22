@@ -52,8 +52,18 @@ let dbCache: Firestore | null = null;
 
 export function adminDb(): Firestore {
   if (dbCache) return dbCache;
-  dbCache = getFirestore(adminApp());
-  dbCache.settings({ ignoreUndefinedProperties: true });
+  const db = getFirestore(adminApp());
+  // firebase-admin is a server external, so every route bundle shares one
+  // Firestore instance but has its own copy of this module and its cache.
+  // The first bundle to get here applies the settings; settings() throws if
+  // called again, and the instance already has them, so a later bundle
+  // just skips it.
+  try {
+    db.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // Already initialised by another bundle in this process.
+  }
+  dbCache = db;
   return dbCache;
 }
 
